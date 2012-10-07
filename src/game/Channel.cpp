@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ void Channel::Join(ObjectGuid p, const char *pass)
     if(m_announce && (!plr || plr->GetSession()->GetSecurity() < SEC_GAMEMASTER || !sWorld.getConfig(CONFIG_BOOL_SILENTLY_GM_JOIN_TO_CHANNEL) ))
     {
         MakeJoined(&data, p);
-        SendToAll(&data);
+        //SendToAll(&data);
     }
 
     data.clear();
@@ -153,7 +153,7 @@ void Channel::Leave(ObjectGuid p, bool send)
         {
             WorldPacket data;
             MakeLeft(&data, p);
-            SendToAll(&data);
+            //SendToAll(&data);
         }
 
         LeaveNotify(p);

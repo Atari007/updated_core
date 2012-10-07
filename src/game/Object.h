@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -445,6 +445,14 @@ class MANGOS_DLL_SPEC WorldObject : public Object
             { x = m_position.x; y = m_position.y; z = m_position.z; }
         void GetPosition( WorldLocation &loc ) const
             { loc.mapid = m_mapId; GetPosition(loc.coord_x, loc.coord_y, loc.coord_z); loc.orientation = GetOrientation(); }
+		
+	    void MovePositionToFirstCollision(WorldLocation &pos, float dist, float angle);
+	    void GetFirstCollisionPosition(WorldLocation &pos, float dist, float angle)
+        {
+            GetPosition(pos);
+            MovePositionToFirstCollision(pos, dist, angle);
+        }
+
         float GetOrientation( ) const { return m_position.o; }
         void GetNearPoint2D( float &x, float &y, float distance, float absAngle) const;
         void GetNearPoint(WorldObject const* searcher, float &x, float &y, float &z, float searcher_bounding_radius, float distance2d, float absAngle) const;
@@ -580,7 +588,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         // ASSERT print helper
         bool PrintCoordinatesError(float x, float y, float z, char const* descr) const;
 
-        virtual void StartGroupLoot(Group* group, uint32 timer) {}
+		virtual void StartGroupLoot(Group* group, uint32 timer) {}
 
     protected:
         explicit WorldObject();
@@ -591,7 +599,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void SetLocationMapId(uint32 _mapId) { m_mapId = _mapId; }
         void SetLocationInstanceId(uint32 _instanceId) { m_InstanceId = _instanceId; }
 
-        virtual void StopGroupLoot() {}
+		virtual void StopGroupLoot() {}
 
         std::string m_name;
 

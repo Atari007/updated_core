@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -826,7 +826,6 @@ bool Object::PrintEntryError(char const* descr) const
     return false;
 }
 
-
 void Object::BuildUpdateDataForPlayer(Player* pl, UpdateDataMapType& update_players)
 {
     UpdateDataMapType::iterator iter = update_players.find(pl);
@@ -914,6 +913,54 @@ void WorldObject::SetOrientation(float orientation)
     if (isType(TYPEMASK_UNIT))
         ((Unit*)this)->m_movementInfo.ChangeOrientation(orientation);
 }
+
+void WorldObject::MovePositionToFirstCollision(WorldLocation &pos, float dist, float angle)
+{
+        angle += m_position.o;
+        float destX, destY, destZ, ground, floor;
+ 
+	    destX = pos.coord_x + dist * cos(angle);
+        destY = pos.coord_y + dist * sin(angle);
+        ground = GetMap()->GetTerrain()->GetHeight(destX, destY, MAX_HEIGHT, true);
+        floor = GetMap()->GetTerrain()->GetHeight(destX, destY, pos.coord_z, true);
+        destZ = fabs(ground - pos.coord_z) <= fabs(floor - pos.coord_z) ? ground : floor;
+
+        bool colPoint = VMAP::VMapFactory::createOrGetVMapManager()->getObjectHitPos(GetMapId(),pos.coord_x,pos.coord_y,pos.coord_z+0.5f,destX,destY,destZ+0.5f,destX,destY,destZ,-0.5f);
+
+        if (colPoint)
+        {
+            destX -= CONTACT_DISTANCE * cos(angle);
+            destY -= CONTACT_DISTANCE * sin(angle);
+            dist = sqrt((pos.coord_x - destX)*(pos.coord_x - destX) + (pos.coord_y - destY)*(pos.coord_y - destY));
+        }
+
+        float step = dist/10.0f;
+
+        for (int i = 0; i < 10; i++)
+        {
+            if (fabs(pos.coord_z - destZ) > ATTACK_DISTANCE)
+            {
+                destX -= step * cos(angle);
+                destY -= step * sin(angle);
+                ground = GetMap()->GetTerrain()->GetHeight(destX, destY, MAX_HEIGHT, true);
+                floor = GetMap()->GetTerrain()->GetHeight(destX, destY, pos.coord_z, true);
+                destZ = fabs(ground - pos.coord_z) <= fabs(floor - pos.coord_z) ? ground : floor;
+            }
+            else
+            {
+				pos.coord_x = destX;
+				pos.coord_y = destY;
+				pos.coord_z = destZ;
+                break;
+            }
+        }
+
+        MaNGOS::NormalizeMapCoord(pos.coord_x);
+        MaNGOS::NormalizeMapCoord(pos.coord_y);
+        UpdateGroundPositionZ(pos.coord_x, pos.coord_y, pos.coord_z);
+	    pos.orientation = m_position.o;
+}
+
 
 uint32 WorldObject::GetZoneId() const
 {

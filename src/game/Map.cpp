@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1797,7 +1797,25 @@ void Map::SendObjectUpdates()
     {
         Object* obj = *i_objectsToClientUpdate.begin();
         i_objectsToClientUpdate.erase(i_objectsToClientUpdate.begin());
-        obj->BuildUpdateData(update_players);
+
+        if (obj && obj->IsInWorld())
+            switch(obj->GetTypeId())
+            {
+               case TYPEID_ITEM:
+               case TYPEID_CONTAINER:
+                   ((Item*)obj)->BuildUpdateData(update_players);
+               break;
+               case TYPEID_PLAYER:
+                   if(!(obj->GetGUIDLow() != 0 && sObjectMgr.GetPlayer(obj->GetObjectGuid())))
+               break;
+               case TYPEID_UNIT:
+               case TYPEID_GAMEOBJECT:
+               case TYPEID_DYNAMICOBJECT:
+               case TYPEID_CORPSE:
+                   ((WorldObject*)obj)->BuildUpdateData(update_players);
+               break;
+               default: break;
+            }
     }
 
     WorldPacket packet;                                     // here we allocate a std::vector with a size of 0x10000

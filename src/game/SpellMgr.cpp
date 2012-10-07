@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -550,7 +550,7 @@ bool IsSingleFromSpellSpecificSpellRanksPerTarget(SpellSpecific spellSpec1,Spell
 {
     switch(spellSpec1)
     {
-        case SPELL_BLESSING:
+		case SPELL_BLESSING:
         case SPELL_AURA:
         case SPELL_CURSE:
         case SPELL_ASPECT:
@@ -833,6 +833,8 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
                     switch(spellproto->EffectMiscValue[effIndex])
                     {
                         case SPELLMOD_COST:                 // dependent from bas point sign (negative -> positive)
+							if(spellproto->Id == 12042)     // Arcane Power Workaround
+                                break;
                             if(spellproto->CalculateSimpleValue(effIndex) > 0)
                                 return false;
                             break;
@@ -1843,6 +1845,14 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
                     if (spellInfo_1->SpellIconID == 1662 && spellInfo_2->SpellIconID == 1662)
                         return false;
 
+					// Encapsulate and Encapsulate triggered spell
+                    if (spellInfo_1->SpellIconID == 2294 && spellInfo_2->SpellIconID == 2294)
+                        return false;
+
+                    // Armageddon and Armageddon triggered spell
+                    if (spellInfo_1->SpellIconID == 45 && spellInfo_2->SpellIconID == 45)
+                        return false;
+
                     break;
                 }
                 case SPELLFAMILY_MAGE:
@@ -2018,6 +2028,11 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
         case SPELLFAMILY_DRUID:
             if (spellInfo_2->SpellFamilyName == SPELLFAMILY_DRUID)
             {
+				// Moonfire and Lacerate
+				if ((spellInfo_1->SpellIconID == 225 && spellInfo_2->SpellIconID == 2246) ||
+					(spellInfo_2->SpellIconID == 225 && spellInfo_1->SpellIconID == 2246))
+				return false;
+
                 //Omen of Clarity and Blood Frenzy
                 if (((spellInfo_1->SpellFamilyFlags == UI64LIT(0x0) && spellInfo_1->SpellIconID == 108) && (spellInfo_2->SpellFamilyFlags & UI64LIT(0x20000000000000))) ||
                     ((spellInfo_2->SpellFamilyFlags == UI64LIT(0x0) && spellInfo_2->SpellIconID == 108) && (spellInfo_1->SpellFamilyFlags & UI64LIT(0x20000000000000))))

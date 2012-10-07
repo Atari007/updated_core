@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1027,7 +1027,7 @@ void Aura::TriggerSpell()
 
                         uint32 markSpellId = 0;
                         uint32 debuffSpellId = 0;
-
+                         
                         switch (auraId)
                         {
                             case 23184:
@@ -1651,33 +1651,33 @@ void Aura::TriggerSpell()
     }
     else                                                    // initial triggeredSpellInfo != NULL
     {
-        // for channeled spell cast applied from aura owner to channel target (persistent aura affects already applied to true target)
-        // come periodic casts applied to targets, so need seelct proper caster (ex. 15790)
-        if (IsChanneledSpell(GetSpellProto()) && GetSpellProto()->Effect[GetEffIndex()] != SPELL_EFFECT_PERSISTENT_AREA_AURA)
-        {
-            // interesting 2 cases: periodic aura at caster of channeled spell
-            if (target->GetObjectGuid() == casterGUID)
-            {
-                triggerCaster = target;
-
-                if (WorldObject* channelTarget = target->GetMap()->GetWorldObject(target->GetChannelObjectGuid()))
-                {
-                    if (channelTarget->isType(TYPEMASK_UNIT))
-                        triggerTarget = (Unit*)channelTarget;
-                    else
-                        triggerTargetObject = channelTarget;
-                }
-            }
-            // or periodic aura at caster channel target
-            else if (Unit* caster = GetCaster())
-            {
-                if (target->GetObjectGuid() == caster->GetChannelObjectGuid())
-                {
-                    triggerCaster = caster;
-                    triggerTarget = target;
-                }
-            }
-        }
+        // for channeled spell cast applied from aura owner to channel target (persistent aura affects already applied to true target) 
+        // come periodic casts applied to targets, so need seelct proper caster (ex. 15790) 
+        if (IsChanneledSpell(GetSpellProto()) && GetSpellProto()->Effect[GetEffIndex()] != SPELL_EFFECT_PERSISTENT_AREA_AURA) 
+        { 
+            // interesting 2 cases: periodic aura at caster of channeled spell 
+            if (target->GetObjectGuid() == casterGUID) 
+            { 
+                triggerCaster = target; 
+ 
+                if (WorldObject* channelTarget = target->GetMap()->GetWorldObject(target->GetChannelObjectGuid())) 
+                { 
+                    if (channelTarget->isType(TYPEMASK_UNIT)) 
+                        triggerTarget = (Unit*)channelTarget; 
+                    else 
+                        triggerTargetObject = channelTarget; 
+                } 
+            } 
+            // or periodic aura at caster channel target 
+            else if (Unit* caster = GetCaster()) 
+            { 
+                if (target->GetObjectGuid() == caster->GetChannelObjectGuid()) 
+                { 
+                    triggerCaster = caster; 
+                    triggerTarget = target; 
+                } 
+            } 
+        } 
 
         // Spell exist but require custom code
         switch(auraId)
@@ -1742,12 +1742,12 @@ void Aura::TriggerSpell()
                     caster->CastSpell(triggerTarget, trigger_spell_id, true, NULL, this);
                 return;
             }
-            case 44883:                                     // Encapsulate
-            {
-                // Self cast spell, hence overwrite caster (only channeled spell where the triggered spell deals dmg to SELF)
-                triggerCaster = triggerTarget;
-                break;
-            }
+            case 44883:                                     // Encapsulate 
+            { 
+                // Self cast spell, hence overwrite caster (only channeled spell where the triggered spell deals dmg to SELF) 
+                triggerCaster = triggerTarget; 
+                break; 
+            } 
         }
     }
 
@@ -1907,6 +1907,10 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         return;
                     case 43873:                             // Headless Horseman Laugh
                         target->PlayDistanceSound(11965);
+                        return;
+					case 45042:								// Shifting Naaru Sliver
+						if (Unit* caster = GetCaster())
+                            caster->CastSpell(target, 45044, true, NULL, this);
                         return;
                     case 46699:                             // Requires No Ammo
                         if (target->GetTypeId() == TYPEID_PLAYER)
@@ -2128,6 +2132,26 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 target->RemoveAurasDueToSpell(41105);
                 return;
             }
+			case 41608:										// Shattrath Flask Of Relentless Assault
+			{
+				target->RemoveAurasDueToSpell(41606);
+				return;
+			}
+			case 41609:										// Shattrath Flask Of Fortification
+			{
+				target->RemoveAurasDueToSpell(41607);
+				return;
+			}
+			case 41610:										// Shattrath Flask Of Mighty Restoration
+			{
+				target->RemoveAurasDueToSpell(41605);
+				return;
+			}
+			case 41611:										// Shattrath Flask Of Supreme Power
+			{
+				target->RemoveAurasDueToSpell(41604);
+				return;
+			}
             case 42454:                                     // Captured Totem
             {
                 if (m_removeMode == AURA_REMOVE_BY_DEFAULT)
@@ -2169,6 +2193,23 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
                 return;
             }
+			case 45373:										// Bloodberry Elixir
+			{
+				target->RemoveAurasDueToSpell(45374);
+				return;
+			}
+			case 45911:                                     // Armageddon
+            {
+                // Cast Armageddon damage missile
+                target->CastSpell(target, 45909, true);
+                return;
+            }
+            case 45914:                                     // Armageddon
+            {
+                // Cast next Armageddon visual
+                target->CastSpell(target, 45911, true);
+                return;
+            }
             case 45934:                                     // Dark Fiend
             {
                 // Kill target if dispelled
@@ -2182,6 +2223,16 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 target->CastSpell(target, 47287, true, NULL, this);
                 return;
             }
+			case 46837:										// Shattrath Flask Of Pure Death
+			{
+				target->RemoveAurasDueToSpell(46838);
+				return;
+			}
+			case 46839:										// Shattrath Flask Of Blinding Light
+			{
+				target->RemoveAurasDueToSpell(46840);
+				return;
+			}
         }
     }
 
@@ -2542,6 +2593,8 @@ void Aura::HandleAuraMounted(bool apply, bool Real)
         if (minfo)
             display_id = minfo->modelid;
 
+		target->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
+
         target->Mount(display_id, GetId());
     }
     else
@@ -2662,6 +2715,9 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         case FORM_FLIGHT:
         case FORM_MOONKIN:
         {
+            // druids should not be able to shapeshift out of cripple
+            if(target->HasAura(31477)) break;
+            
             // remove movement affects
             target->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT, GetHolder());
             Unit::AuraList const& slowingAuras = target->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
@@ -3302,6 +3358,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
         if(target->GetTypeId() == TYPEID_UNIT)
         {
             ((Creature*)target)->AIM_Initialize();
+
             target->AttackedBy(caster);
         }
     }
@@ -3485,6 +3542,7 @@ void Aura::HandleModCharm(bool apply, bool Real)
         if(target->GetTypeId() == TYPEID_UNIT)
         {
             ((Creature*)target)->AIM_Initialize();
+
             target->AttackedBy(caster);
         }
     }
@@ -3559,6 +3617,9 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
 
         target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
         target->CastStop(target->GetObjectGuid() == GetCasterGuid() ? GetId() : 0);
+
+		// remove stealth when stunned
+        target->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
 
         // Creature specific
         if(target->GetTypeId() != TYPEID_PLAYER)
@@ -3799,6 +3860,12 @@ void Aura::HandleInvisibility(bool apply, bool Real)
                 if (!target->HasAuraType(SPELL_AURA_MOD_STEALTH))
                     target->SetVisibility(VISIBILITY_ON);
             }
+        }
+
+		if (GetId() == 46021)                          // Spectral Realm
+        {
+            target->CastSpell(target, 46020, true);
+            target->CastSpell(target, 44867, true);
         }
     }
 }
@@ -6076,6 +6143,10 @@ void Aura::PeriodicTick()
         }
         case SPELL_AURA_PERIODIC_MANA_LEECH:
         {
+            // stop Mark of Kaz'rogal from blowing up NPCs
+            if (GetId() == 31447 && target->GetTypeId() != TYPEID_PLAYER)
+                return;
+
             // don't damage target if not alive, possible death persistent effects
             if (!target->isAlive())
                 return;
@@ -6143,7 +6214,6 @@ void Aura::PeriodicTick()
                 target->AddThreat(pCaster, float(gain) * 0.5f, false, GetSpellSchoolMask(spellProto), spellProto);
             }
 
-            // Some special cases
             switch (GetId())
             {
                 case 32960:                                 // Mark of Kazzak
@@ -6154,7 +6224,7 @@ void Aura::PeriodicTick()
                         pdamage = target->GetMaxPower(POWER_MANA) * 5 / 100;
                         drain_amount = target->GetPower(POWER_MANA) > pdamage ? pdamage : target->GetPower(POWER_MANA);
                         target->ModifyPower(POWER_MANA, -drain_amount);
-
+ 
                         SpellPeriodicAuraLogInfo pInfo(this, drain_amount, 0, 0, 0.0f);
                         target->SendPeriodicAuraLog(&pInfo);
                     }

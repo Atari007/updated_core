@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -179,8 +179,14 @@ enum AccountTypes
     SEC_PLAYER         = 0,
     SEC_MODERATOR      = 1,
     SEC_GAMEMASTER     = 2,
-    SEC_ADMINISTRATOR  = 3,
-    SEC_CONSOLE        = 4                                  // must be always last in list, accounts must have less security level always also
+	SEC_GAMEMASTER_2   = 3,
+	SEC_GAMEMASTER_3   = 4,
+	SEC_GAMEMASTER_4   = 5,
+	SEC_GAMEMASTER_5   = 6,
+	SEC_GAMEMASTER_6   = 7,
+	SEC_GAMEMASTER_7   = 8,
+    SEC_ADMINISTRATOR  = 9,
+    SEC_CONSOLE        = 10                                  // must be always last in list, accounts must have less security level always also
 };
 
 // Used in mangosd/realmd

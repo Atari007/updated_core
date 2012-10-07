@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1141,10 +1141,6 @@ void Player::Update( uint32 update_diff, uint32 p_time )
         setAttackTimer(RANGED_ATTACK, (update_diff >= ranged_att ? 0 : ranged_att - update_diff) );
     }
 
-    if(uint32 off_att = getAttackTimer(OFF_ATTACK))
-    {
-        setAttackTimer(OFF_ATTACK, (update_diff >= off_att ? 0 : off_att - update_diff) );
-    }
 
     time_t now = time (NULL);
 
@@ -1264,6 +1260,11 @@ void Player::Update( uint32 update_diff, uint32 p_time )
     if (isAlive())
     {
         RegenerateAll();
+    }
+
+	if (!isAlive() && !HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+    {
+        SetHealth(0);
     }
 
     if (m_deathState == JUST_DIED)
@@ -2401,8 +2402,17 @@ void Player::GiveLevel(uint32 level)
         pet->SynchronizeLevelWithOwner();
 
     if (MailLevelReward const* mailReward = sObjectMgr.GetMailLevelReward(level,getRaceMask()))
-        MailDraft(mailReward->mailTemplateId).SendMailTo(this,MailSender(MAIL_CREATURE,mailReward->senderEntry));
-
+    {
+        if (mailReward->mailTemplateId != 0) // Send mail with customItem instead of a template
+            MailDraft(mailReward->mailTemplateId).SendMailTo(this,MailSender(MAIL_CREATURE,mailReward->senderEntry));
+        else
+        {
+            MailDraft mail (mailReward->subject.c_str(), mailReward->text.c_str());
+            Item* item = Item::CreateItem(mailReward->item, 1);
+            mail.AddItem(item);
+            mail.SendMailTo(this,MailSender(MAIL_CREATURE,mailReward->senderEntry));
+        }
+    }
 }
 
 void Player::UpdateFreeTalentPoints(bool resetIfNeed)
@@ -5234,7 +5244,6 @@ void Player::UpdateWeaponSkill(WeaponAttackType attType)
         UpdateSkill(pWeapon->GetSkill(), weaponSkillGain);
     else if (!pWeapon && attType == BASE_ATTACK)
         UpdateSkill(SKILL_UNARMED, weaponSkillGain);
-
     UpdateAllCritPercentages();
 }
 
@@ -6684,12 +6693,10 @@ void Player::_ApplyItemBonuses(ItemPrototype const *proto,uint8 slot,bool apply)
             case ITEM_MOD_HIT_RATING:
                 ApplyRatingMod(CR_HIT_MELEE, int32(val), apply);
                 ApplyRatingMod(CR_HIT_RANGED, int32(val), apply);
-                ApplyRatingMod(CR_HIT_SPELL, int32(val), apply);
                 break;
             case ITEM_MOD_CRIT_RATING:
                 ApplyRatingMod(CR_CRIT_MELEE, int32(val), apply);
                 ApplyRatingMod(CR_CRIT_RANGED, int32(val), apply);
-                ApplyRatingMod(CR_CRIT_SPELL, int32(val), apply);
                 break;
             case ITEM_MOD_HIT_TAKEN_RATING:
                 ApplyRatingMod(CR_HIT_TAKEN_MELEE, int32(val), apply);
@@ -6709,7 +6716,6 @@ void Player::_ApplyItemBonuses(ItemPrototype const *proto,uint8 slot,bool apply)
             case ITEM_MOD_HASTE_RATING:
                 ApplyRatingMod(CR_HASTE_MELEE, int32(val), apply);
                 ApplyRatingMod(CR_HASTE_RANGED, int32(val), apply);
-                ApplyRatingMod(CR_HASTE_SPELL, int32(val), apply);
                 break;
             case ITEM_MOD_EXPERTISE_RATING:
                 ApplyRatingMod(CR_EXPERTISE, int32(val), apply);
@@ -7453,7 +7459,8 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
             loot = &go->loot;
 
-            Player* recipient = go->GetLootRecipient();
+			Player* recipient = go->GetLootRecipient();
+
             if (!recipient)
             {
                 go->SetLootRecipient(this);
@@ -7484,7 +7491,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
                     loot->FillLoot(lootid, LootTemplates_Gameobject, this, false);
                     loot->generateMoneyLoot(go->GetGOInfo()->MinMoneyLoot, go->GetGOInfo()->MaxMoneyLoot);
 
-                    if (go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGOInfo()->chest.groupLootRules)
+					if (go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGOInfo()->chest.groupLootRules)
                     {
                         if (Group* group = go->GetGroupLootRecipient())
                         {
@@ -7516,7 +7523,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
                 go->SetLootState(GO_ACTIVATED);
             }
-            if (go->getLootState() == GO_ACTIVATED && go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGOInfo()->chest.groupLootRules)
+			if (go->getLootState() == GO_ACTIVATED && go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGOInfo()->chest.groupLootRules)
             {
                 if (Group* group = go->GetGroupLootRecipient())
                 {
@@ -11951,13 +11958,11 @@ void Player::ApplyEnchantment(Item *item, EnchantmentSlot slot, bool apply, bool
                         case ITEM_MOD_HIT_RATING:
                             ((Player*)this)->ApplyRatingMod(CR_HIT_MELEE, enchant_amount, apply);
                             ((Player*)this)->ApplyRatingMod(CR_HIT_RANGED, enchant_amount, apply);
-                            ((Player*)this)->ApplyRatingMod(CR_HIT_SPELL, enchant_amount, apply);
                             DEBUG_LOG("+ %u HIT", enchant_amount);
                             break;
                         case ITEM_MOD_CRIT_RATING:
                             ((Player*)this)->ApplyRatingMod(CR_CRIT_MELEE, enchant_amount, apply);
                             ((Player*)this)->ApplyRatingMod(CR_CRIT_RANGED, enchant_amount, apply);
-                            ((Player*)this)->ApplyRatingMod(CR_CRIT_SPELL, enchant_amount, apply);
                             DEBUG_LOG("+ %u CRITICAL", enchant_amount);
                             break;
 //                        Values ITEM_MOD_HIT_TAKEN_RATING and ITEM_MOD_CRIT_TAKEN_RATING are never used in Enchantment
@@ -11980,7 +11985,6 @@ void Player::ApplyEnchantment(Item *item, EnchantmentSlot slot, bool apply, bool
                         case ITEM_MOD_HASTE_RATING:
                             ((Player*)this)->ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
                             ((Player*)this)->ApplyRatingMod(CR_HASTE_RANGED, enchant_amount, apply);
-                            ((Player*)this)->ApplyRatingMod(CR_HASTE_SPELL, enchant_amount, apply);
                             DEBUG_LOG("+ %u HASTE", enchant_amount);
                             break;
                         case ITEM_MOD_EXPERTISE_RATING:
@@ -12444,14 +12448,14 @@ void Player::OnGossipSelect(WorldObject* pSource, uint32 gossipListId, uint32 me
             break;
         }
     }
-
-    if (pMenuData.m_gAction_script)
-    {
-        if (pSource->GetTypeId() == TYPEID_UNIT)
-            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, pSource, this);
-        else if (pSource->GetTypeId() == TYPEID_GAMEOBJECT)
-            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, this, pSource);
-    }
+ 
+    if (pMenuData.m_gAction_script) 
+    { 
+        if (pSource->GetTypeId() == TYPEID_UNIT) 
+            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, pSource, this); 
+        else if (pSource->GetTypeId() == TYPEID_GAMEOBJECT) 
+            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, this, pSource); 
+    } 
 }
 
 uint32 Player::GetGossipTextId(WorldObject *pSource)
@@ -17072,6 +17076,7 @@ void Player::TextEmote(const std::string& text)
     SendMessageToSetInRange(&data,sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE),true, !sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CHAT) );
 }
 
+/*
 void Player::Whisper(const std::string& text, uint32 language, ObjectGuid receiver)
 {
     if (language != LANG_ADDON)                             // if not addon data
@@ -17102,6 +17107,44 @@ void Player::Whisper(const std::string& text, uint32 language, ObjectGuid receiv
         ChatHandler(this).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName(), rPlayer->autoReplyMsg.c_str());
     else if (rPlayer->isDND())
         ChatHandler(this).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName(), rPlayer->autoReplyMsg.c_str());
+}
+*/
+
+void Player::Whisper(const std::string& text, uint32 language, ObjectGuid receiver)
+{
+    if (language != LANG_ADDON)                             // if not addon data
+        language = LANG_UNIVERSAL;                          // whispers should always be readable
+
+    Player *rPlayer = sObjectMgr.GetPlayer(receiver);
+
+    // announce dnd message
+    if (rPlayer->isDND() && !isGameMaster())
+    {
+        ChatHandler(this).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName(), rPlayer->autoReplyMsg.c_str());
+        return;
+    }
+
+    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    BuildPlayerChat(&data, CHAT_MSG_WHISPER, text, language);
+    rPlayer->GetSession()->SendPacket(&data);
+
+    // not send confirmation for addon messages
+    if (language != LANG_ADDON)
+    {
+        data.Initialize(SMSG_MESSAGECHAT, 200);
+        rPlayer->BuildPlayerChat(&data, CHAT_MSG_REPLY, text, language);
+        GetSession()->SendPacket(&data);
+    }
+
+    if (!isAcceptWhispers())
+    {
+        SetAcceptWhispers(true);
+        ChatHandler(this).SendSysMessage(LANG_COMMAND_WHISPERON);
+    }
+
+    // announce afk message
+    if (rPlayer->isAFK())
+        ChatHandler(this).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName(), rPlayer->autoReplyMsg.c_str());
 }
 
 void Player::PetSpellInitialize()

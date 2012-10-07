@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1000,6 +1000,8 @@ void BattleGround::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
             plr->SpawnCorpseBones();
         }
     }
+	else
+		sObjectAccessor.ConvertCorpseForPlayer(guid);
 
     RemovePlayer(plr, guid);                                // BG subclass specific code
 
